@@ -1,3 +1,12 @@
-torch
+torch==2.10.0
+torchaudio
 pandas
 numpy
+scikit-learn
+umap-learn
+matplotlib
+bokeh
+datashader
+holoviews
+scikit-image
+colorcet
