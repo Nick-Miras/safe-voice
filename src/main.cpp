@@ -66,11 +66,6 @@ void loop() {
 
         // Unlock sequence
         lockServo.write(UNLOCKED_ANGLE);
-        delay(UNLOCK_DURATION);
-
-        // Relock sequence
-        Serial.println("Locking...");
-        lockServo.write(LOCKED_ANGLE);
       } else {
         Serial.println("Access Denied! Incorrect passcode.");
       }
