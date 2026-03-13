@@ -7,7 +7,7 @@
 
 // --- Servo Configuration ---
 Servo lockServo;
-constexpr int SERVO_PIN = 10;       // Pin connected to the servo signal wire
+constexpr int SERVO_PIN = 3;       // Pin connected to the servo signal wire
 constexpr int LOCKED_ANGLE = 0;     // Angle for the "locked" position
 constexpr int UNLOCKED_ANGLE = 90;  // Angle for the "unlocked" position
 constexpr int UNLOCK_DURATION = 10000; // How long the door stays unlocked (in milliseconds)
@@ -25,9 +25,9 @@ char keys[ROWS][COLS] = {
 };
 
 // Connect keypad ROW1, ROW2, ROW3 and ROW4 to these Arduino pins.
-byte rowPins[ROWS] = {9, 8, 7, 6};
+byte rowPins[ROWS] = {7, 6, 5, 4};
 // Connect keypad COL1, COL2, COL3 and COL4 to these Arduino pins.
-byte colPins[COLS] = {5, 4, 3, 2};
+byte colPins[COLS] = {11, 10, 9, 8};
 
 // Initialize the Keypad
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
