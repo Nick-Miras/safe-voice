@@ -148,3 +148,7 @@ Temporary Items
 
 ### User Specific files
 .idea
+
+
+### Python
+__pycache__/
