@@ -4,6 +4,11 @@
 #include <Arduino.h>
 #include <Keypad.h>
 #include <Servo.h>
+#include "audio.h"
+
+// Setup I2S for the INMP441 microphone.
+I2S i2sIn(INPUT);
+
 
 // --- Servo Configuration ---
 Servo lockServo;
@@ -37,7 +42,9 @@ const String CORRECT_PASSCODE = "1234"; // Set your secret passcode here
 String enteredPasscode = "";            // Buffer to hold user input
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
+  // Wait for Serial to initialize (optional, remove if running untethered)
+  while (!Serial) delay(10);
 
   // Attach and set initial locked position
   lockServo.attach(SERVO_PIN);
@@ -46,6 +53,16 @@ void setup() {
   Serial.println("System Initialized.");
   Serial.println("Enter passcode and press '#' to submit.");
   Serial.println("Press '*' to clear your input.");
+  Serial.println();
+
+  setupMicrophone(i2sIn);
+  Serial.println("Initializing INMP441 on Pico 2...");
+  // Start I2S at 16kHz (The standard frequency for Speech Recognition)
+  if (!i2sIn.begin(16000)) {
+    Serial.println("Failed to initialize I2S! Check your wiring.");
+    while (1); // Halt
+  }
+  Serial.println("I2S Initialized successfully.");
 }
 
 void loop() {
