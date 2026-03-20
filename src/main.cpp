@@ -6,9 +6,6 @@
 #include <Servo.h>
 #include "audio.h"
 
-// Setup I2S for the INMP441 microphone.
-I2S i2sIn(INPUT);
-
 
 // --- Servo Configuration ---
 Servo lockServo;
@@ -20,6 +17,13 @@ constexpr int UNLOCK_DURATION = 10000; // How long the door stays unlocked (in m
 // --- Keypad Configuration ---
 constexpr byte ROWS = 4;
 constexpr byte COLS = 4;
+
+// --- Ultrasonic Sensor Configuration ---
+constexpr int TRIG_PIN = 12; // Adjust if using different pins
+constexpr int ECHO_PIN = 13; // Adjust if using different pins
+constexpr float DISTANCE_THRESHOLD_CM = 5.0; // Distance threshold to consider door closed
+unsigned long lastUltrasonicCheck = 0;
+constexpr unsigned long ULTRASONIC_INTERVAL = 200; // Check distance every 200ms
 
 // Define the keymap based on a standard 4x4 membrane keypad
 char keys[ROWS][COLS] = {
@@ -46,6 +50,11 @@ void setup() {
   // Wait for Serial to initialize (optional, remove if running untethered)
   while (!Serial) delay(10);
 
+  // Initialize Ultrasonic Sensor Pins
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
+  digitalWrite(TRIG_PIN, LOW); // Start LOW
+
   // Attach and set initial locked position
   lockServo.attach(SERVO_PIN);
   lockServo.write(LOCKED_ANGLE);
@@ -55,17 +64,42 @@ void setup() {
   Serial.println("Press '*' to clear your input.");
   Serial.println();
 
-  setupMicrophone(i2sIn);
-  Serial.println("Initializing INMP441 on Pico 2...");
-  // Start I2S at 16kHz (The standard frequency for Speech Recognition)
-  if (!i2sIn.begin(16000)) {
-    Serial.println("Failed to initialize I2S! Check your wiring.");
-    while (1); // Halt
-  }
-  Serial.println("I2S Initialized successfully.");
+  // setupMicrophone(i2sIn);
+  // Serial.println("Initializing INMP441 on Pico 2...");
+  // // Start I2S at 16kHz (The standard frequency for Speech Recognition)
+  // if (!i2sIn.begin(16000)) {
+  //   Serial.println("Failed to initialize I2S! Check your wiring.");
+  //   while (1); // Halt
+  // }
+  // Serial.println("I2S Initialized successfully.");
 }
 
 void loop() {
+  // Check the ultrasonic sensor periodically without blocking
+  if (millis() - lastUltrasonicCheck >= ULTRASONIC_INTERVAL) {
+    lastUltrasonicCheck = millis();
+
+    // Trigger specific sequence for HC-SR04
+    digitalWrite(TRIG_PIN, LOW);
+    delayMicroseconds(2);
+    digitalWrite(TRIG_PIN, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(TRIG_PIN, LOW);
+
+    // Read the pulse duration (timeout = 30ms ~ 5m max distance)
+    long duration = pulseIn(ECHO_PIN, HIGH, 30000);
+    if (duration > 0) {
+      // Calculate distance in cm
+      float distanceCm = duration * 0.034 / 2;
+      
+      // If the door is close enough, automatically lock the servo
+      if (distanceCm < DISTANCE_THRESHOLD_CM) {
+        // Only output if the state has changed to prevent log spamming, or just actuate
+        lockServo.write(LOCKED_ANGLE);
+      }
+    }
+  }
+
   char key = keypad.getKey();
 
   if (key) {
@@ -80,7 +114,6 @@ void loop() {
 
       if (enteredPasscode == CORRECT_PASSCODE) {
         Serial.println("Access Granted! Unlocking...");
-
         // Unlock sequence
         lockServo.write(UNLOCKED_ANGLE);
       } else {
